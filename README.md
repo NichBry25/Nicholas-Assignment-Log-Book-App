@@ -5,6 +5,7 @@ REST API built with Next.js (App Router) to manage assignments. It supports list
 ## Setup
 
 ```bash
+cd log-book-app
 npm install
 npm run dev
 ```
