@@ -7,7 +7,7 @@ Content-Type: application/json
   "title": "Math homework",
   "description": "Chapter 2",
   "dueDate": "2026-03-15T10:00:00.000Z",
-  "status": "pending"
+  "status": "Create"
 }
 
 ### Create assignment (error: missing title)
@@ -34,7 +34,7 @@ PUT http://localhost:3000/api/assignments/{{assignmentId}}
 Content-Type: application/json
 
 {
-  "status": "completed"
+  "status": "Submitted"
 }
 
 ### Update assignment (error: invalid status)

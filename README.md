@@ -28,9 +28,9 @@ App runs at `http://localhost:3000`.
   - `id` string
   - `title` string (required)
   - `description` string (optional)
+  - `status` one of `Create`, `On Process`, `Submitted`
+  - `assignmentDate` ISO date-time string (auto-set on create)
   - `dueDate` ISO date-time string (optional)
-  - `status` one of `pending`, `in_progress`, `completed`
-  - `createdAt`, `updatedAt` ISO date-time strings
 - `AssignmentCreate`
   - `title` required, others optional
 - `AssignmentUpdate`
@@ -43,7 +43,7 @@ App runs at `http://localhost:3000`.
 - OpenAPI JSON: `http://localhost:3000/api/docs`
 - Swagger UI: `http://localhost:3000/docs`
 
-Note: Swagger UI loads assets from `unpkg.com` CDN. If you are offline, use the JSON endpoint instead.
+Swagger UI assets are bundled locally via `swagger-ui-dist`.
 
 ## Testing (Success + Error Scenarios)
 
@@ -51,36 +51,86 @@ Note: Swagger UI loads assets from `unpkg.com` CDN. If you are offline, use the 
 
 ### Create Assignment
 
+Success:
 ```bash
 curl -X POST http://localhost:3000/api/assignments \
   -H "Content-Type: application/json" \
-  -d '{"title":"Math homework","description":"Chapter 2","dueDate":"2026-03-15T10:00:00.000Z","status":"pending"}'
+  -d '{"title":"Math homework","description":"Chapter 2","dueDate":"2026-03-15T10:00:00.000Z","status":"Create"}'
+```
+
+Error (missing title):
+```bash
+curl -X POST http://localhost:3000/api/assignments \
+  -H "Content-Type: application/json" \
+  -d '{"description":"No title"}'
+```
+
+Error (invalid JSON):
+```bash
+curl -X POST http://localhost:3000/api/assignments \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Broken JSON"'
 ```
 
 ### List Assignments
 
+Success:
 ```bash
 curl http://localhost:3000/api/assignments
 ```
 
 ### Get Assignment Detail
 
+Success:
 ```bash
 curl http://localhost:3000/api/assignments/{id}
 ```
 
+Error (not found):
+```bash
+curl http://localhost:3000/api/assignments/does-not-exist
+```
+
 ### Update Assignment
 
+Success:
 ```bash
 curl -X PUT http://localhost:3000/api/assignments/{id} \
   -H "Content-Type: application/json" \
-  -d '{"status":"completed"}'
+  -d '{"status":"Submitted"}'
+```
+
+Error (invalid status):
+```bash
+curl -X PUT http://localhost:3000/api/assignments/{id} \
+  -H "Content-Type: application/json" \
+  -d '{"status":"done"}'
+```
+
+Error (empty body / no fields):
+```bash
+curl -X PUT http://localhost:3000/api/assignments/{id} \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Error (not found):
+```bash
+curl -X PUT http://localhost:3000/api/assignments/does-not-exist \
+  -H "Content-Type: application/json" \
+  -d '{"status":"Submitted"}'
 ```
 
 ### Delete Assignment
 
+Success:
 ```bash
 curl -X DELETE http://localhost:3000/api/assignments/{id}
+```
+
+Error (not found):
+```bash
+curl -X DELETE http://localhost:3000/api/assignments/does-not-exist
 ```
 
 ## Data Storage

@@ -156,19 +156,18 @@ const openApiSpec = {
     schemas: {
       AssignmentStatus: {
         type: "string",
-        enum: ["pending", "in_progress", "completed"],
+        enum: ["Create", "On Process", "Submitted"],
       },
       Assignment: {
         type: "object",
-        required: ["id", "title", "status", "createdAt", "updatedAt"],
+        required: ["id", "title", "status", "assignmentDate"],
         properties: {
           id: { type: "string" },
           title: { type: "string", example: "Math homework" },
           description: { type: "string", nullable: true },
           dueDate: { type: "string", format: "date-time", nullable: true },
           status: { $ref: "#/components/schemas/AssignmentStatus" },
-          createdAt: { type: "string", format: "date-time" },
-          updatedAt: { type: "string", format: "date-time" },
+          assignmentDate: { type: "string", format: "date-time" },
         },
       },
       AssignmentCreate: {

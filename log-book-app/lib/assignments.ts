@@ -2,30 +2,17 @@ import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import path from "path";
 
-export type AssignmentStatus = "pending" | "in_progress" | "completed";
-
-export type Assignment = {
-  id: string;
-  title: string;
-  description?: string;
-  dueDate?: string;
-  status: AssignmentStatus;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AssignmentCreateInput = {
-  title: string;
-  description?: string;
-  dueDate?: string;
-  status?: AssignmentStatus;
-};
-
-export type AssignmentUpdateInput = Partial<AssignmentCreateInput>;
+import {
+  AssignmentCreateInput,
+  AssignmentRecord,
+  AssignmentStatus,
+  AssignmentStatusValues,
+  AssignmentUpdateInput,
+} from "./schema";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "assignments.json");
-const STATUS_VALUES: AssignmentStatus[] = ["pending", "in_progress", "completed"];
+const STATUS_VALUES: AssignmentStatus[] = [...AssignmentStatusValues];
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
@@ -40,6 +27,11 @@ const isValidDate = (value: unknown): value is string =>
   typeof value === "string" && Number.isFinite(Date.parse(value));
 
 const nowIso = () => new Date().toISOString();
+const legacyStatusMap: Record<string, AssignmentStatus> = {
+  pending: "Create",
+  in_progress: "On Process",
+  completed: "Submitted",
+};
 
 async function ensureDataFile() {
   await fs.mkdir(DATA_DIR, { recursive: true });
@@ -50,21 +42,66 @@ async function ensureDataFile() {
   }
 }
 
-async function readAssignments(): Promise<Assignment[]> {
+function normalizeAssignment(value: unknown): AssignmentRecord | null {
+  if (value === null || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const id = typeof record.id === "string" ? record.id : null;
+  const title = typeof record.title === "string" ? record.title : null;
+
+  if (!id || !title) {
+    return null;
+  }
+
+  const rawStatus = record.status;
+  let status: AssignmentStatus = "Create";
+
+  if (isValidStatus(rawStatus)) {
+    status = rawStatus;
+  } else if (typeof rawStatus === "string" && legacyStatusMap[rawStatus]) {
+    status = legacyStatusMap[rawStatus];
+  }
+
+  const assignmentDate =
+    typeof record.assignmentDate === "string"
+      ? record.assignmentDate
+      : typeof record.createdAt === "string"
+        ? record.createdAt
+        : nowIso();
+
+  const description =
+    typeof record.description === "string" ? record.description : undefined;
+  const dueDate = typeof record.dueDate === "string" ? record.dueDate : undefined;
+
+  return {
+    id,
+    title,
+    description,
+    dueDate,
+    status,
+    assignmentDate,
+  };
+}
+
+async function readAssignments(): Promise<AssignmentRecord[]> {
   await ensureDataFile();
   const raw = await fs.readFile(DATA_FILE, "utf8");
   try {
-    const parsed = JSON.parse(raw) as Assignment[];
+    const parsed = JSON.parse(raw) as AssignmentRecord[];
     if (!Array.isArray(parsed)) {
       return [];
     }
-    return parsed;
+    return parsed
+      .map((item) => normalizeAssignment(item))
+      .filter((item): item is AssignmentRecord => item !== null);
   } catch {
     return [];
   }
 }
 
-async function writeAssignments(assignments: Assignment[]) {
+async function writeAssignments(assignments: AssignmentRecord[]) {
   await ensureDataFile();
   await fs.writeFile(DATA_FILE, JSON.stringify(assignments, null, 2) + "\n", "utf8");
 }
@@ -77,14 +114,13 @@ export async function createAssignment(input: AssignmentCreateInput) {
   const assignments = await readAssignments();
   const timestamp = nowIso();
 
-  const assignment: Assignment = {
+  const assignment: AssignmentRecord = {
     id: randomUUID(),
     title: input.title.trim(),
     description: input.description?.trim() || undefined,
     dueDate: input.dueDate,
-    status: input.status ?? "pending",
-    createdAt: timestamp,
-    updatedAt: timestamp,
+    status: input.status ?? "Create",
+    assignmentDate: timestamp,
   };
 
   assignments.push(assignment);
@@ -107,7 +143,7 @@ export async function updateAssignment(id: string, input: AssignmentUpdateInput)
   }
 
   const current = assignments[index];
-  const updated: Assignment = {
+  const updated: AssignmentRecord = {
     ...current,
     title: input.title ? input.title.trim() : current.title,
     description:
@@ -116,7 +152,6 @@ export async function updateAssignment(id: string, input: AssignmentUpdateInput)
         : input.description.trim() || undefined,
     dueDate: input.dueDate === undefined ? current.dueDate : input.dueDate,
     status: input.status ?? current.status,
-    updatedAt: nowIso(),
   };
 
   assignments[index] = updated;
@@ -165,7 +200,7 @@ export function validateCreateInput(payload: unknown) {
 
   const status = data.status;
   if (status !== undefined && !isValidStatus(status)) {
-    errors.push("status must be one of: pending, in_progress, completed.");
+    errors.push("status must be one of: Create, On Process, Submitted.");
   }
 
   if (errors.length > 0) {
@@ -175,7 +210,7 @@ export function validateCreateInput(payload: unknown) {
   return {
     errors: [],
     data: {
-      title: title.trim(),
+      title: (title as string).trim(),
       description: typeof description === "string" ? description : undefined,
       dueDate: typeof dueDate === "string" ? dueDate : undefined,
       status: status as AssignmentStatus | undefined,
@@ -219,7 +254,7 @@ export function validateUpdateInput(payload: unknown) {
 
   if ("status" in data) {
     if (data.status !== undefined && !isValidStatus(data.status)) {
-      errors.push("status must be one of: pending, in_progress, completed.");
+      errors.push("status must be one of: Create, On Process, Submitted.");
     } else {
       updates.status = data.status as AssignmentStatus | undefined;
     }
