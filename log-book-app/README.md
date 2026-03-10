@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Assignment Log Book API
 
-## Getting Started
+REST API built with Next.js (App Router) to manage assignments. It supports list, create, detail, update, delete, and includes Swagger/OpenAPI documentation.
 
-First, run the development server:
+## Setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App runs at `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API Design
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Method | Endpoint | Description | Request Body | Success Response | Error Response |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/api/assignments` | List assignments | - | `200` `{ items: Assignment[], count }` | - |
+| POST | `/api/assignments` | Create assignment | `AssignmentCreate` | `201` `Assignment` | `400` `ErrorResponse` |
+| GET | `/api/assignments/{id}` | Assignment detail | - | `200` `Assignment` | `404` `ErrorResponse` |
+| PUT | `/api/assignments/{id}` | Update assignment (partial) | `AssignmentUpdate` | `200` `Assignment` | `400/404` `ErrorResponse` |
+| DELETE | `/api/assignments/{id}` | Delete assignment | - | `200` `{ message, item }` | `404` `ErrorResponse` |
 
-## Learn More
+### Schema Summary
 
-To learn more about Next.js, take a look at the following resources:
+- `Assignment`
+  - `id` string
+  - `title` string (required)
+  - `description` string (optional)
+  - `dueDate` ISO date-time string (optional)
+  - `status` one of `pending`, `in_progress`, `completed`
+  - `createdAt`, `updatedAt` ISO date-time strings
+- `AssignmentCreate`
+  - `title` required, others optional
+- `AssignmentUpdate`
+  - any subset of fields from `AssignmentCreate`
+- `ErrorResponse`
+  - `{ error: { message: string, details?: string[] } }`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Swagger / OpenAPI
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- OpenAPI JSON: `http://localhost:3000/api/docs`
+- Swagger UI: `http://localhost:3000/docs`
 
-## Deploy on Vercel
+Note: Swagger UI loads assets from `unpkg.com` CDN. If you are offline, use the JSON endpoint instead.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Testing (Success + Error Scenarios)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> Replace `{id}` with a real id returned from the create endpoint.
+
+### Create Assignment
+
+```bash
+curl -X POST http://localhost:3000/api/assignments \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Math homework","description":"Chapter 2","dueDate":"2026-03-15T10:00:00.000Z","status":"pending"}'
+```
+
+### List Assignments
+
+```bash
+curl http://localhost:3000/api/assignments
+```
+
+### Get Assignment Detail
+
+```bash
+curl http://localhost:3000/api/assignments/{id}
+```
+
+### Update Assignment
+
+```bash
+curl -X PUT http://localhost:3000/api/assignments/{id} \
+  -H "Content-Type: application/json" \
+  -d '{"status":"completed"}'
+```
+
+### Delete Assignment
+
+```bash
+curl -X DELETE http://localhost:3000/api/assignments/{id}
+```
+
+## Data Storage
+
+Assignments are stored locally in `data/assignments.json` to imitate an actual database.

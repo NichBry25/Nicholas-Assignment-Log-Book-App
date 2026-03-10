@@ -1,0 +1,28 @@
+.docsRoot {
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #0f172a;
+  color-scheme: light;
+}
+
+:global(body) {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+:global(.swagger-ui) {
+  color: #0f172a;
+}
+
+:global(.swagger-ui .info .title) {
+  color: #0f172a;
+}
+
+:global(.swagger-ui .scheme-container) {
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+:global(.swagger-ui .opblock) {
+  background: #ffffff;
+}

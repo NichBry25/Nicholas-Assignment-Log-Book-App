@@ -1,0 +1,52 @@
+### Create assignment (success)
+# @name createAssignment
+POST http://localhost:3000/api/assignments
+Content-Type: application/json
+
+{
+  "title": "Math homework",
+  "description": "Chapter 2",
+  "dueDate": "2026-03-15T10:00:00.000Z",
+  "status": "pending"
+}
+
+### Create assignment (error: missing title)
+POST http://localhost:3000/api/assignments
+Content-Type: application/json
+
+{
+  "description": "No title"
+}
+
+### List assignments (success)
+GET http://localhost:3000/api/assignments
+
+@assignmentId = {{createAssignment.response.body.id}}
+
+### Get assignment detail (success)
+GET http://localhost:3000/api/assignments/{{assignmentId}}
+
+### Get assignment detail (error: not found)
+GET http://localhost:3000/api/assignments/does-not-exist
+
+### Update assignment (success)
+PUT http://localhost:3000/api/assignments/{{assignmentId}}
+Content-Type: application/json
+
+{
+  "status": "completed"
+}
+
+### Update assignment (error: invalid status)
+PUT http://localhost:3000/api/assignments/{{assignmentId}}
+Content-Type: application/json
+
+{
+  "status": "done"
+}
+
+### Delete assignment (success)
+DELETE http://localhost:3000/api/assignments/{{assignmentId}}
+
+### Delete assignment (error: not found)
+DELETE http://localhost:3000/api/assignments/does-not-exist
